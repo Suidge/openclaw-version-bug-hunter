@@ -1,7 +1,7 @@
 ---
 name: openclaw-version-bug-hunter
 slug: openclaw-version-bug-hunter
-version: 2.1.0
+version: 2.1.1
 description: Query version-specific GitHub bug reports with quality assessment markers; agent combines output with user config for contextual upgrade evaluation.
 ---
 

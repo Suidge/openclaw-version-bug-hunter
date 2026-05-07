@@ -3,7 +3,7 @@
 **OpenClaw 版本 Bug 猎人** — 升级前查询特定版本的已知 bug 和 regression，帮助避坑🔍
 
 ![License](https://img.shields.io/github/license/Suidge/openclaw-version-bug-hunter)
-![Version](https://img.shields.io/badge/version-2.1.0-blue)
+![Version](https://img.shields.io/badge/version-2.1.1-blue)
 
 ---
 
