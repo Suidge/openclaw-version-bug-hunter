@@ -1,8 +1,8 @@
 ---
 name: openclaw-version-bug-hunter
 slug: openclaw-version-bug-hunter
-version: 2.0.0
-description: Query version-specific GitHub bug reports with built-in quality assessment for actionable upgrade decisions.
+version: 2.1.0
+description: Query version-specific GitHub bug reports with quality assessment markers; agent combines output with user config for contextual upgrade evaluation.
 ---
 
 # OpenClaw Version Bug Hunter
@@ -20,6 +20,8 @@ description: Query version-specific GitHub bug reports with built-in quality ass
 ## 功能
 
 此技能封装了 GitHub CLI (`gh`)，自动搜索并分类 OpenClaw 官方仓库中与特定版本相关的 issue 报告。
+
+**设计原则：脚本提供数据，Agent 做 contextual 评估。** 脚本不做简单的阈值判断（因为 OpenClaw 永远有 actionable issue），Agent 应结合主人的实际配置（渠道/插件/运行时/Node版本/部署方式）判断哪些 bug 真正影响当前环境。
 
 ### 输出内容
 
@@ -81,7 +83,8 @@ bug-hunt.sh 2026.4.9
 - 未解决 issues: 25
 - 已解决 issues: 8
 
-🟡 谨慎升级 — 有少量可行动 issue，建议查看具体描述
+---
+💡 升级评估：请结合你的实际配置（渠道/插件/运行时/Node版本/部署方式）
 ```
 
 ### 比较两个版本
@@ -119,22 +122,29 @@ gh auth status
 
 ## 输出解读
 
-### 推荐升级 🟢
-- actionable Critical: 0
-- actionable Regression: 0-1（非阻塞性）
-- 有已合并的修复 PR
+脚本只提供**结构化数据**，不做简单的阈值判断。OpenClaw 是活跃项目，永远有 actionable issue，关键是**哪些影响你的实际配置**。
 
-### 谨慎升级 🟡
-- actionable Critical: 1-2（但有 workaround）
-- actionable issues ≤ 3
-- 暂无修复 PR
+### Agent 评估指南
 
-### 暂缓升级 🔴
-- actionable Critical: 3+
-- actionable issues 集中（> 5 个可行动的 bug）
-- 社区反馈集中爆发
+当主人要求升级评估时，Agent 应结合以下维度做 contextual 判断：
 
-> 升级建议基于 **actionable** issue 数量，自动过滤 vague 和重复条目。
+| 配置维度 | 排查方向 |
+|---|---|
+| 使用的渠道 | 只关注对应渠道的 bug（飞书/Discord/微信等） |
+| 启用的插件 | 关注相关插件的 bug（active-memory、codex 等） |
+| 运行时 | Pi/Codex embedded — 关注对应 runtime 的 regression |
+| Node 版本 | 关注特定 Node 版本的兼容性问题 |
+| 部署方式 | 本机/容器 — 忽略无关部署的问题 |
+| 当前版本 | 判断是否有新 regression 需要热修复 |
+
+**评估结论格式**：
+```
+🟢 可以升级 — 与你的配置相关的 actionable issue 为 0
+🟡 谨慎升级 — 发现 X 个影响你配置的问题：
+   - #N: 简述（影响你的 Y 功能）
+🔴 暂缓升级 — 发现 Critical regression 影响核心功能：
+   - #N: 简述
+```
 
 ## 高级用法
 
