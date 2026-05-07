@@ -1,6 +1,8 @@
 ---
 name: openclaw-version-bug-hunter
-description: 查询 OpenClaw 特定版本的 GitHub bug/issue 报告。当用户想要：(1) 查询 OpenClaw 特定版本的 bug/issue，(2) 升级前查看避坑指南，(3) 搜索 GitHub 社区反馈的版本问题，(4) 获取版本稳定性评估，(5) 分析某个版本有多少严重 bug 或 regression 时使用。
+slug: openclaw-version-bug-hunter
+version: 2.0.0
+description: Query version-specific GitHub bug reports with built-in quality assessment for actionable upgrade decisions.
 ---
 
 # OpenClaw Version Bug Hunter
@@ -24,8 +26,19 @@ description: 查询 OpenClaw 特定版本的 GitHub bug/issue 报告。当用户
 1. **🔴 Critical / 严重问题** - 导致崩溃、数据丢失、系统不稳定的 bug
 2. **🟠 Regression / 回归问题** - 之前版本正常，当前版本失效的功能
 3. **🟡 General Bugs / 一般问题** - 其他 bug 报告
-4. **📊 统计信息** - 未解决/已解决 issues 数量
-5. **✅ 修复状态** - 已合并的修复 PR 列表
+4. **📋 质量评估** - 每个 issue 的可行动性/重复/模糊度自动标记
+5. **📊 统计信息** - 未解决/已解决 issues 数量 + 质量分布
+6. **✅ 修复状态** - 已合并的修复 PR 列表
+
+### 质量评估标记（内置，零 LLM 依赖）
+
+| 标记 | 含义 | 判定逻辑 |
+|------|------|----------|
+| ✅ actionable | 有足够信息可调查 | 复现步骤 + 错误信息 + 环境/代码引用 ≥ 4 分 |
+| ⚡ partial | 部分信息 | 有错误消息但缺少复现步骤，2-3 分 |
+| ❓ needs info | 缺少关键信息 | 无复现步骤、无错误堆栈、无环境信息 |
+| ⚠️ vague | 描述过于模糊 | 正文 < 50 字或缺乏技术关键词 |
+| 🔁 dup of #N | 疑似重复 | 标题与同批次 issue 高度相似 |
 
 ### 严重程度判定规则
 
@@ -48,15 +61,27 @@ bug-hunt.sh 2026.4.9
 输出示例：
 ```
 ### 🔴 Critical / 严重问题
-- #64745: macOS 2026.4.8 app causes infinite self-replication...
+- #64745: macOS 2026.4.8 app causes infinite self-replication... [✅ actionable]
+- #64812: Same replication loop issue... [🔁 dup of #64745]
+- #65003: It crashes lol [⚠️ vague]
 
 ### 🟠 Regression / 回归问题
-- #64552: Severe Performance Regression - 30-60 Second Delay...
-- #64636: Version 2026.4.9 ignore the system environment proxy...
+- #64552: Severe Performance Regression - 30-60 Second Delay... [✅ actionable]
+- #64636: Version 2026.4.9 ignore the system environment proxy... [⚡ partial]
+
+### 📋 质量评估
+- 总 issue 数: 25
+- ✅ actionable: 8
+- ⚡ partial: 5
+- ❓ needs info: 7
+- ⚠️ vague: 3
+- 🔁 duplicate: 2
 
 ### 📊 统计信息
 - 未解决 issues: 25
 - 已解决 issues: 8
+
+🟡 谨慎升级 — 有少量可行动 issue，建议查看具体描述
 ```
 
 ### 比较两个版本
@@ -94,20 +119,22 @@ gh auth status
 
 ## 输出解读
 
-### 推荐升级 ✅
-- Critical issues: 0
-- Regression issues: 0-1（非阻塞性）
+### 推荐升级 🟢
+- actionable Critical: 0
+- actionable Regression: 0-1（非阻塞性）
 - 有已合并的修复 PR
 
-### 谨慎升级 ⚠️
-- Critical issues: 1-2（但有 workaround）
-- Regression issues: 2-5
+### 谨慎升级 🟡
+- actionable Critical: 1-2（但有 workaround）
+- actionable issues ≤ 3
 - 暂无修复 PR
 
-### 暂缓升级 ❌
-- Critical issues: 3+
-- Regression issues: 5+（影响核心功能）
+### 暂缓升级 🔴
+- actionable Critical: 3+
+- actionable issues 集中（> 5 个可行动的 bug）
 - 社区反馈集中爆发
+
+> 升级建议基于 **actionable** issue 数量，自动过滤 vague 和重复条目。
 
 ## 高级用法
 
@@ -176,7 +203,7 @@ gh issue list --repo openclaw/openclaw --label bug --search "v2026.4.9 OR 2026.4
 ## 发布渠道
 
 - **ClawHub**: `clawhub install openclaw-version-bug-hunter`
-- **GitHub**: https://github.com/neoshi/openclaw-version-bug-hunter
+- **GitHub**: https://github.com/Suidge/openclaw-version-bug-hunter
 
 ---
 
